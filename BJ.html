@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stratégie Blackjack</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #222;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background-color: #333;
+            padding: 30px;
+            border-radius: 10px;
+            width: 300px;
+        }
+        h1 {
+            color: #0f0;
+        }
+        input {
+            margin: 10px 0;
+            padding: 10px;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background-color: #555;
+            color: white;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #0f0;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0a0;
+        }
+        #action {
+            margin-top: 20px;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+        .note {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .tire {
+            background-color: #f44336;
+            color: white;
+        }
+        .rester {
+            background-color: #4caf50;
+            color: white;
+        }
+        .doubler {
+            background-color: #ff9800;
+            color: white;
+        }
+        .separer {
+            background-color: #3f51b5;
+            color: white;
+        }
+        .abandon {
+            background-color: #9c27b0;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Conseiller Blackjack</h1>
+        <label for="carte1">Carte 1 (joueur) :</label><br>
+        <input type="text" id="carte1" placeholder="Ex: 10, A, J, etc." oninput="validerEtPasserSuivant('carte1', 'carte2')"><br>
+        <label for="carte2">Carte 2 (joueur) :</label><br>
+        <input type="text" id="carte2" placeholder="Ex: 10, A, J, etc." oninput="validerEtPasserSuivant('carte2', 'carteCroupier')"><br>
+        <label for="carteCroupier">Carte visible croupier :</label><br>
+        <input type="text" id="carteCroupier" placeholder="Ex: 10, A, J, etc." oninput="validerEtCalculer('carteCroupier')"><br><br>
+        <button id="button" onclick="calculerAction()">Quel est le move ?</button>
+
+        <div id="action"></div>
+        <div id="note" class="note"></div>
+    </div>
+
+    <script>
+        function normaliserCarte(carte) {
+            carte = carte.toUpperCase();
+            if (carte === "J" || carte === "Q" || carte === "K" || carte === "10") return "10";
+            return carte;
+        }
+
+        function valeur(carte) {
+            carte = normaliserCarte(carte);
+            if (carte === "A") return 11;
+            return parseInt(carte);
+        }
+
+        function estCarteValide(carte) {
+            carte = carte.toUpperCase();
+            if (carte === "A" || carte === "J" || carte === "Q" || carte === "K" || carte === "10") return true;
+            const num = parseInt(carte);
+            return !isNaN(num) && num >= 2 && num <= 10;
+        }
+
+        function validerEtPasserSuivant(champActuelId, champSuivantId) {
+            const champActuel = document.getElementById(champActuelId);
+            const valeur = champActuel.value.toUpperCase();
+            if (estCarteValide(valeur)) {
+                const champSuivant = document.getElementById(champSuivantId);
+                champSuivant.focus();
+            }
+        }
+
+        function validerEtCalculer(champActuelId) {
+            const champActuel = document.getElementById(champActuelId);
+            const valeur = champActuel.value.toUpperCase();
+            if (estCarteValide(valeur)) calculerAction();
+        }
+
+        function strategieExacte(carte1, carte2, croupier) {
+            carte1 = normaliserCarte(carte1);
+            carte2 = normaliserCarte(carte2);
+            croupier = normaliserCarte(croupier);
+
+            const val1 = valeur(carte1), val2 = valeur(carte2), total = val1 + val2;
+            const estPaire = carte1 === carte2, estSoft = (carte1 === "A" || carte2 === "A") && total <= 21;
+            const croupierValeur = croupier === "A" ? "A" : croupier;
+
+            if (estPaire) {
+                if (carte1 === "A") return ["2", "3", "4", "5", "6", "7", "8", "9", "10"].includes(croupierValeur) ? "Séparer" : "Tirer";
+                if (carte1 === "10") return "Rester";
+                if (carte1 === "9") {
+                    if (["2", "3", "4", "5", "6", "8", "9"].includes(croupierValeur)) return "Séparer";
+                    return "Rester";
+                }
+                if (carte1 === "8") return ["2", "3", "4", "5", "6", "7", "8", "9"].includes(croupierValeur) ? "Séparer" : "Abandon si permis, sinon Tirer";
+                if (carte1 === "7") {
+                    if (["2", "3", "4", "5", "6", "7"].includes(croupierValeur)) return "Séparer";
+                    if (["8", "9"].includes(croupierValeur)) return "Tirer";
+                    return "Abandon si permis, sinon Tirer";
+                }
+                if (carte1 === "6") {
+                    if (["2", "3", "4", "5", "6"].includes(croupierValeur)) return "Séparer";
+                    if (["7", "8", "9", "10"].includes(croupierValeur)) return "Tirer";
+                    return "Abandon si permis, sinon Tirer";
+                }
+                if (carte1 === "5") return ["2", "3", "4", "5", "6", "7", "8", "9"].includes(croupierValeur) ? "Doubler" : "Tirer";
+                if (carte1 === "4") return ["5", "6"].includes(croupierValeur) ? "Séparer" : "Tirer";
+                if (carte1 === "3") {
+                    if (["2", "3", "4", "5", "6", "7"].includes(croupierValeur)) return "Séparer";
+                    if (["8", "9", "10"].includes(croupierValeur)) return "Tirer";
+                    return "Abandon si permis, sinon Tirer";
+                }
+                if (carte1 === "2") {
+                    if (["2", "3", "4", "5", "6", "7"].includes(croupierValeur)) return "Séparer";
+                    return "Tirer";
+                }
+            }
+
+            if (estSoft) {
+                const autreCarte = carte1 === "A" ? val2 : val1;
+                if (autreCarte >= 9) return "Rester";
+                if (autreCarte === 8) return croupierValeur === "6" ? "Doubler" : "Rester";
+                if (autreCarte === 7) {
+                    if (["3", "4", "5", "6"].includes(croupierValeur)) return "Doubler";
+                    if (["9", "10", "A"].includes(croupierValeur)) return "Tirer";
+                    return "Rester";
+                }
+                if (autreCarte === 6) return ["3", "4", "5", "6"].includes(croupierValeur) ? "Doubler" : "Tirer";
+                if (autreCarte === 5) return ["4", "5", "6"].includes(croupierValeur) ? "Doubler" : "Tirer";
+                if (autreCarte === 4) return ["4", "5", "6"].includes(croupierValeur) ? "Doubler" : "Tirer";
+                if (autreCarte === 3) return ["5", "6"].includes(croupierValeur) ? "Doubler" : "Tirer";
+                if (autreCarte === 2) return ["5", "6"].includes(croupierValeur) ? "Doubler" : "Tirer";
+            }
+
+            let totalHard = estSoft && total > 21 ? total - 10 : total;
+            if (!estSoft || total > 21) {
+                if (totalHard >= 17) {
+                    if (totalHard <= 19 || (totalHard === 17 && croupierValeur !== "A")) return "Rester";
+                    return "Abandon si permis, sinon Rester";
+                }
+                if (totalHard === 16) {
+                    if (["2", "3", "4", "5", "6"].includes(croupierValeur)) return "Rester";
+                    if (["7", "8"].includes(croupierValeur)) return "Tirer";
+                    if (croupierValeur === "9") return "Abandon si permis, sinon Tirer";
+                    if (croupierValeur === "10") return ["Tirer", "Note : Si vous avez plus de 3 cartes avec un total de 16, il est recommandé d'abandonner si permis, sinon de rester"];
+                    return "Abandon si permis, sinon Tirer";
+                }
+                if (totalHard === 15) {
+                    if (["2", "3", "4", "5", "6"].includes(croupierValeur)) return "Rester";
+                    if (["7", "8", "9"].includes(croupierValeur)) return "Tirer";
+                    if (croupierValeur === "10") return "Abandon si permis, sinon Tirer";
+                    return "Abandon si permis, sinon Rester";
+                }
+                if (totalHard === 14) {
+                    if (["2", "3", "4", "5", "6"].includes(croupierValeur)) return "Rester";
+                    if (["7", "8", "9", "10"].includes(croupierValeur)) return "Tirer";
+                    return "Abandon si permis, sinon Tirer";
+                }
+                if (totalHard === 13) return ["2", "3", "4", "5", "6"].includes(croupierValeur) ? "Rester" : "Tirer";
+                if (totalHard === 12) return ["4", "5", "6"].includes(croupierValeur) ? "Rester" : "Tirer";
+                if (totalHard === 11) return "Doubler";
+                if (totalHard === 10) return ["2", "3", "4", "5", "6", "7", "8", "9"].includes(croupierValeur) ? "Doubler" : "Tirer";
+                if (totalHard === 9) return ["3", "4", "5", "6"].includes(croupierValeur) ? "Doubler" : "Tirer";
+                if (totalHard <= 8) return "Tirer";
+            }
+
+            return "Action non définie";
+        }
+
+        function calculerAction() {
+            const carte1 = document.getElementById("carte1").value.toUpperCase();
+            const carte2 = document.getElementById("carte2").value.toUpperCase();
+            const carteCroupier = document.getElementById("carteCroupier").value.toUpperCase();
+
+            if (!carte1 || !carte2 || !carteCroupier) return;
+
+            if (!estCarteValide(carte1) || !estCarteValide(carte2) || !estCarteValide(carteCroupier)) {
+                const actionDiv = document.getElementById("action");
+                actionDiv.textContent = "Carte invalide";
+                actionDiv.className = "";
+                document.getElementById("note").textContent = "";
+                return;
+            }
+
+            const result = strategieExacte(carte1, carte2, carteCroupier);
+            const actionDiv = document.getElementById("action");
+            const noteDiv = document.getElementById("note");
+
+            let action, note = "";
+            if (Array.isArray(result)) {
+                [action, note] = result;
+            } else {
+                action = result;
+            }
+
+            actionDiv.textContent = action;
+            noteDiv.textContent = note;
+
+            if (action === "Tirer") actionDiv.className = "tire";
+            else if (action === "Rester") actionDiv.className = "rester";
+            else if (action === "Doubler") actionDiv.className = "doubler";
+            else if (action === "Séparer") actionDiv.className = "separer";
+            else if (action.startsWith("Abandon")) actionDiv.className = "abandon";
+            else actionDiv.className = "";
+        }
+    </script>
+</body>
+</html>
